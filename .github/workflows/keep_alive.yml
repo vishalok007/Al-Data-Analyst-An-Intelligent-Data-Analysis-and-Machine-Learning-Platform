@@ -12,6 +12,25 @@ jobs:
     steps:
       - name: Send Browser HTTP Ping to Streamlit App
         run: |
-          curl -s -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" "https://3cibvktrrltbwhrdg39ieh.streamlit.app" > /dev/null
-          curl -s -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" "https://aidataanalyst.streamlit.app" > /dev/null
-          echo "Automated traffic ping sent successfully to Streamlit Cloud at $(date)"
+          URLS=(
+            "https://3cibvktrrltbwhrdg39ieh.streamlit.app"
+            "https://aidataanalyst.streamlit.app"
+          )
+          
+          COOKIE_JAR="/tmp/streamlit_cookies.txt"
+          USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          
+          for url in "${URLS[@]}"; do
+            echo "Pinging $url ..."
+            HTTP_STATUS=$(curl -s -L --max-redirs 10 \
+              --connect-timeout 30 \
+              --max-time 60 \
+              -c "$COOKIE_JAR" \
+              -b "$COOKIE_JAR" \
+              -A "$USER_AGENT" \
+              -o /dev/null \
+              -w "%{http_code}" "$url" || echo "ERR")
+            echo "Response from $url: HTTP $HTTP_STATUS"
+          done
+          
+          echo "Automated traffic ping completed at $(date)"
